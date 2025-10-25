@@ -65,7 +65,8 @@ class CopilotToken(BaseModel):
 
     public_suggestions: str
     telemetry: str
-    enterprise_list: list[int]
+    # enterprise_list: list[int]
+    enterprise_list: list[int] | None = None  # Make this optional with default None
 
     code_review_enabled: bool
 

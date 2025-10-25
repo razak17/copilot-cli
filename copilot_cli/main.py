@@ -1,6 +1,8 @@
 import argparse
 import os
 import subprocess
+import sys
+from pathlib import Path
 
 import pyperclip
 from halo import Halo
@@ -14,26 +16,33 @@ from copilot_cli.log import CopilotCLILogger
 from copilot_cli.streamer.markdown import MarkdownStreamer, StreamOptions
 
 
-def resource_path(relative_path: str) -> str:
-    """Get absolute path to resource, works for dev and for PyInstaller
+def get_actions_file_path() -> str:
+    """Get the path to the actions.yml file."""
+    # First, try to find it relative to this module
+    current_dir = Path(__file__).parent
+    actions_file = current_dir / "actions.yml"
 
-    Args:
-        relative_path: The relative path to the resource file
+    if actions_file.exists():
+        return str(actions_file)
 
-    Returns:
-        str: The absolute path to the resource
-    """
-    base_path: str
+    # Fallback: try in the current working directory (for development)
+    cwd_actions = Path.cwd() / "actions.yml"
+    if cwd_actions.exists():
+        return str(cwd_actions)
 
+    # If running as PyInstaller bundle
     try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
+        base_path = Path(sys._MEIPASS)
+        bundled_actions = base_path / "actions.yml"
+        if bundled_actions.exists():
+            return str(bundled_actions)
+    except AttributeError:
+        pass
 
-    return os.path.join(base_path, str(relative_path))
+    raise FileNotFoundError("actions.yml file not found")
 
 
-action_manager = ActionManager(resource_path("actions.yml"))
+action_manager = ActionManager(get_actions_file_path())
 
 
 def run_command(cmd: list[str]) -> subprocess.CompletedProcess[str]:
